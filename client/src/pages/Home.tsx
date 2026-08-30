@@ -1,5 +1,5 @@
 /* Baseline Pickle Club skin: court-first geometry, court green + ball yellow, Space Grotesk/DM Sans, editorial asymmetric rhythm. Core system: shell, lanes, stepper, account/admin views. Skin: pickleball vocabulary, court diagrams, racket add-on. */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowRight,
@@ -65,7 +65,7 @@ function PublicHeader({ view, setView, onAdmin }: { view: PublicView; setView: (
         <button className={view === "account" ? "active" : ""} onClick={() => setView("account")}>My bookings</button>
       </nav>
       <div className="header-actions">
-        <button className="text-button desktop-only" onClick={() => toast("Member login is ready for your auth provider.")}>Sign in</button>
+        <button className="text-button desktop-only" onClick={onAdmin}>Club ops</button><button className="text-button desktop-only" onClick={() => toast("Member login is ready for your auth provider.")}>Sign in</button>
         <button className="pill-button" onClick={() => setView("book")}>Book now <ArrowRight size={15} /></button>
         <button className="icon-button mobile-only" aria-label="Open menu" onClick={() => toast("Menu opened") }><Menu size={19} /></button>
       </div>
@@ -161,10 +161,13 @@ function ScheduleView() { return <><div className="admin-topbar"><div><span clas
 function SimpleAdmin({ kind }: { kind: Exclude<AdminView, "dashboard" | "schedule"> }) { const titles: Record<Exclude<AdminView, "dashboard" | "schedule">, readonly [string, string, string]> = { resources: ["Resources", "Four courts, one clear view.", "COURT INVENTORY"], customers: ["Customers", "Know who’s on court.", "MEMBER DIRECTORY"], settings: ["Settings", "Make the rules clear.", "CLUB SETTINGS"] }; const [title, sub, label] = titles[kind]; return <><div className="admin-topbar"><div><span className="admin-breadcrumb">WORKSPACE / {label}</span><h1>{title}</h1></div><button className="lime-button" onClick={() => toast(`${title} action opened`)}><Plus size={16} /> Add {kind === "resources" ? "resource" : kind === "customers" ? "member" : "rule"}</button></div><div className="simple-admin-intro"><div><div className="eyebrow">{label}</div><h2>{sub}</h2><p>This reusable core view is ready to connect to your Supabase data model. The pickleball skin supplies the court names, surface labels, and club vocabulary.</p></div><div className="simple-number">{kind === "resources" ? "04" : kind === "customers" ? "318" : "12h"}<small>{kind === "resources" ? "bookable courts" : kind === "customers" ? "active members" : "cancellation window"}</small></div></div><div className="table-card"><div className="table-toolbar"><input placeholder={`Search ${title.toLowerCase()}…`} /><button className="outline-button">Filter <ChevronDown size={15} /></button></div>{(kind === "resources" ? courts.map(c => [c.name, c.meta, c.price, "Active"]) : kind === "customers" ? [["Alex dela Cruz", "alex@example.com", "24 bookings", "Member"],["Mia Santos", "mia@example.com", "12 bookings", "Member"],["Jon Bell", "jon@example.com", "3 bookings", "New member"]] : [["Opening hours", "Mon–Sun · 06:00–22:00", "", "Active"],["Cancellation policy", "12 hours before start", "", "Active"],["Blackout dates", "No blackout dates", "", "Clear"]]).map((row, i) => <div className="table-row" key={i}>{row.map((cell, j) => <span key={j} className={j === row.length - 1 ? "row-badge" : j === 0 ? "row-primary" : ""}>{cell}</span>)}<button className="row-more"><MoreHorizontal size={16} /></button></div>)}</div></>; }
 
 export default function Home() {
-  const [mode, setMode] = useState<Mode>("public");
+  const [mode, setMode] = useState<Mode>(() => window.location.pathname.startsWith("/admin") ? "admin" : "public");
   const [view, setView] = useState<PublicView>("home");
   const [adminView, setAdminView] = useState<AdminView>("dashboard");
   const goBook = () => setView("book");
-  if (mode === "admin") return <AdminShell view={adminView} setView={setAdminView} exit={() => setMode("public")}>{adminView === "dashboard" ? <AdminDashboard setView={setAdminView} /> : adminView === "schedule" ? <ScheduleView /> : <SimpleAdmin kind={adminView} />}</AdminShell>;
-  return <div className="public-shell"><PublicHeader view={view} setView={setView} onAdmin={() => setMode("admin")} /><div className="admin-switch"><button onClick={() => setMode("admin")}><LayoutDashboard size={14} /> Open club ops</button></div>{view === "home" && <HomeView goBook={goBook} />}{view === "book" && <><BookingBoard onConfirm={() => setView("book")} /><BookingFlow onBack={() => setView("home")} /></>}{view === "account" && <AccountView />}</div>;
+  const enterAdmin = () => { window.history.pushState({}, "", "/admin"); setMode("admin"); };
+  const exitAdmin = () => { window.history.pushState({}, "", "/"); setMode("public"); };
+  useEffect(() => { const onPopState = () => setMode(window.location.pathname.startsWith("/admin") ? "admin" : "public"); window.addEventListener("popstate", onPopState); return () => window.removeEventListener("popstate", onPopState); }, []);
+  if (mode === "admin") return <AdminShell view={adminView} setView={setAdminView} exit={exitAdmin}>{adminView === "dashboard" ? <AdminDashboard setView={setAdminView} /> : adminView === "schedule" ? <ScheduleView /> : <SimpleAdmin kind={adminView} />}</AdminShell>;
+  return <div className="public-shell"><PublicHeader view={view} setView={setView} onAdmin={enterAdmin} /><div className="admin-switch"><button onClick={enterAdmin}><LayoutDashboard size={14} /> Open club ops</button></div>{view === "home" && <HomeView goBook={goBook} />}{view === "book" && <><BookingBoard onConfirm={() => setView("book")} /><BookingFlow onBack={() => setView("home")} /></>}{view === "account" && <AccountView />}</div>;
 }
