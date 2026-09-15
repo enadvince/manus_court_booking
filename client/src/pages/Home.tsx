@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import {
   ArrowRight,
   CalendarDays,
+  CalendarPlus,
   Search,
   SlidersHorizontal,
   ChevronDown,
@@ -11,11 +12,13 @@ import {
   ChevronRight,
   Clock3,
   CreditCard,
+  Crown,
   Gauge,
   LayoutDashboard,
   Menu,
   MoreHorizontal,
   Plus,
+  RefreshCw,
   Settings2,
   ShieldCheck,
   Sparkles,
@@ -25,7 +28,7 @@ import {
 } from "lucide-react";
 
 type Mode = "public" | "admin";
-type PublicView = "home" | "book" | "account";
+type PublicView = "home" | "book" | "account" | "openplay";
 type AdminView = "dashboard" | "schedule" | "resources" | "customers" | "settings";
 
 type Slot = { time: string; state: "open" | "busy" | "selected" };
@@ -47,6 +50,21 @@ const courts = [
   { name: "Court 04", meta: "Indoor · Tournament surface", tone: "blue", price: "₱450 / hour" },
 ];
 
+function createGoogleCalendarUrl({ title, details, location, start, end }: { title: string; details: string; location: string; start: string; end: string }) {
+  const params = new URLSearchParams({ action: "TEMPLATE", text: title, details, location, dates: `${start}/${end}` });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+function addToGoogleCalendar(event: { title: string; details: string; location: string; start: string; end: string }) {
+  window.open(createGoogleCalendarUrl(event), "_blank", "noopener,noreferrer");
+  toast("Google Calendar opened with your event details");
+}
+
+function CapacityMeter({ joined, max, label = "players joined" }: { joined: number; max: number; label?: string }) {
+  const percentage = Math.min(100, Math.round((joined / max) * 100));
+  return <div className="capacity-meter"><div className="capacity-heading"><span><Users size={14} /> {label}</span><strong>{joined} <small>/ {max}</small></strong></div><div className="capacity-track"><i style={{ width: `${percentage}%` }} /></div><span className="capacity-note">{joined >= max ? "Session full" : `${max - joined} spot${max - joined === 1 ? "" : "s"} open · host max ${max}`}</span></div>;
+}
+
 function Mark({ dark = false }: { dark?: boolean }) {
   return (
     <span className={`brand-mark ${dark ? "brand-mark-dark" : ""}`} aria-hidden="true">
@@ -55,7 +73,7 @@ function Mark({ dark = false }: { dark?: boolean }) {
   );
 }
 
-function PublicHeader({ view, setView, onAdmin }: { view: PublicView; setView: (view: PublicView) => void; onAdmin: () => void }) {
+function PublicHeader({ view, setView, onAdmin, onOpenPlay }: { view: PublicView; setView: (view: PublicView) => void; onAdmin: () => void; onOpenPlay: () => void }) {
   return (
     <header className="public-header">
       <button className="wordmark" onClick={() => setView("home")} aria-label="Baseline Pickle Club home">
@@ -67,7 +85,7 @@ function PublicHeader({ view, setView, onAdmin }: { view: PublicView; setView: (
         <button className={view === "account" ? "active" : ""} onClick={() => setView("account")}>My bookings</button>
       </nav>
       <div className="header-actions">
-        <button className="text-button desktop-only" onClick={onAdmin}>Club ops</button><button className="text-button desktop-only" onClick={() => toast("Member login is ready for your auth provider.")}>Sign in</button>
+        <button className="text-button desktop-only" onClick={onOpenPlay}>Open Play</button><button className="text-button desktop-only" onClick={onAdmin}>Club ops</button><button className="text-button desktop-only" onClick={() => toast("Member login is ready for your auth provider.")}>Sign in</button>
         <button className="pill-button" onClick={() => setView("book")}>Book now <ArrowRight size={15} /></button>
         <button className="icon-button mobile-only" aria-label="Open menu" onClick={() => toast("Menu opened") }><Menu size={19} /></button>
       </div>
@@ -112,8 +130,10 @@ function CourtLane({ court, selected, onSelect }: { court: typeof courts[number]
   );
 }
 
-function BookingBoard({ onConfirm }: { onConfirm: (court: string) => void }) {
+function BookingBoard({ onConfirm }: { onConfirm: (court: string, maxPlayers: number) => void }) {
   const [selected, setSelected] = useState<string | null>("Court 02-08:00");
+  const [maxPlayers, setMaxPlayers] = useState(4);
+  const joinedPlayers = 2;
   const selectedLabel = selected?.replace("-", " · ") || "Choose a slot";
   return (
     <section className="booking-section" id="book">
@@ -124,7 +144,7 @@ function BookingBoard({ onConfirm }: { onConfirm: (court: string) => void }) {
       </div>
       <div className="availability-toolbar"><div className="day-tabs"><button className="day-tab active"><b>WED</b><span>24</span></button><button className="day-tab"><b>THU</b><span>25</span></button><button className="day-tab"><b>FRI</b><span>26</span></button><button className="day-tab"><b>SAT</b><span>27</span></button></div><div className="legend"><span><i className="legend-open" /> Open</span><span><i className="legend-busy" /> Booked</span></div></div>
       <div className="court-board">{courts.map((court) => <CourtLane key={court.name} court={court} selected={selected?.startsWith(court.name) ? selected : null} onSelect={setSelected} />)}</div>
-      <div className="booking-summary"><div><span className="summary-label">YOUR SESSION</span><strong>{selectedLabel}</strong><small>60 minutes · Tournament surface</small></div><button className="dark-button" onClick={() => onConfirm(selected || "Court 02-08:00")}>Continue <ArrowRight size={16} /></button></div>
+      <div className="booking-summary"><div><span className="summary-label">YOUR SESSION</span><strong>{selectedLabel}</strong><small>60 minutes · Tournament surface</small></div><div className="booking-capacity"><label>PLAYER CAP</label><select value={maxPlayers} onChange={(event) => setMaxPlayers(Number(event.target.value))} aria-label="Maximum players for this session"><option value={2}>2 players</option><option value={4}>4 players</option><option value={6}>6 players</option><option value={8}>8 players</option></select><CapacityMeter joined={joinedPlayers} max={maxPlayers} /></div><button className="dark-button" disabled={joinedPlayers >= maxPlayers} onClick={() => onConfirm(selected || "Court 02-08:00", maxPlayers)}>{joinedPlayers >= maxPlayers ? "Session full" : "Continue"} <ArrowRight size={16} /></button></div>
     </section>
   );
 }
@@ -146,13 +166,33 @@ function HomeView({ goBook }: { goBook: () => void }) {
   </>;
 }
 
-function BookingFlow({ onBack }: { onBack: () => void }) {
-  const [step, setStep] = useState(1);
+function BookingFlow({ onBack, maxPlayers = 4 }: { onBack: () => void; maxPlayers?: number }) {
+  const [step, setStep] = useState<number>(1);
   const steps = ["Select", "Details", "Confirm"];
-  return <main className="flow-page"><div className="flow-top"><button className="back-link" onClick={onBack}><ChevronLeft size={16} /> Back to courts</button><div className="stepper">{steps.map((label, i) => <div key={label} className={`step ${step >= i + 1 ? "done" : ""}`}><span>{i + 1}</span>{label}</div>)}</div><span className="secure-note"><ShieldCheck size={14} /> Secure booking</span></div><div className="flow-layout"><div className="flow-main">{step === 1 && <><div className="eyebrow">SELECT YOUR SESSION</div><h1>Make it a<br /><em>good one.</em></h1><div className="selection-card"><div className="mini-court-diagram"><span /><i /></div><div><span className="summary-label">YOUR PICK</span><h3>Court 02</h3><p>Wednesday, 24 April · 8:00 – 9:00 AM</p><span className="price">₱450 <small>per hour</small></span></div><button className="edit-button" onClick={onBack}>Edit</button></div><button className="dark-button wide" onClick={() => setStep(2)}>Continue to details <ArrowRight size={16} /></button></>}{step === 2 && <><div className="eyebrow">YOUR DETAILS</div><h1>Who’s<br /><em>playing?</em></h1><div className="form-grid"><label>Full name<input placeholder="Alex dela Cruz" /></label><label>Email address<input placeholder="alex@example.com" type="email" /></label><label>Phone number<input placeholder="+63 917 000 0000" /></label><label>Players<select defaultValue="2"><option value="2">2 players</option><option value="4">4 players</option></select></label></div><button className="dark-button wide" onClick={() => setStep(3)}>Review booking <ArrowRight size={16} /></button></>}{step === 3 && <><div className="eyebrow">ALMOST THERE</div><h1>Lock in<br /><em>your game.</em></h1><div className="confirm-card"><div><span className="summary-label">COURT 02 / WED 24 APRIL</span><h3>8:00 – 9:00 AM</h3><p>Indoor tournament surface · 2 players</p></div><strong>₱450</strong></div><label className="check-row"><input type="checkbox" defaultChecked /> I agree to the 12-hour cancellation policy.</label><button className="lime-button wide" onClick={() => toast("Booking confirmed — see you on court!")}>Confirm booking <ArrowRight size={16} /></button></>}</div><aside className="flow-aside"><div className="aside-court"><div className="mini-court-diagram large"><span /><i /></div></div><div className="aside-detail"><span className="summary-label">BASELINE PICKLE CLUB</span><h3>Great choice.</h3><p>Your court is held for 10 minutes while you finish booking.</p><div className="aside-total"><span>Total</span><strong>₱450</strong></div></div></aside></div></main>;
+  const calendarEvent = { title: "Baseline Pickle Club · Court 02", details: `Court booking with ${maxPlayers} player capacity.`, location: "Baseline Pickle Club, Cebu City", start: "20240424T080000", end: "20240424T090000" };
+  return <main className="flow-page"><div className="flow-top"><button className="back-link" onClick={onBack}><ChevronLeft size={16} /> Back to courts</button><div className="stepper">{steps.map((label, i) => <div key={label} className={`step ${step >= i + 1 ? "done" : ""}`}><span>{i + 1}</span>{label}</div>)}</div><span className="secure-note"><ShieldCheck size={14} /> Secure booking</span></div><div className="flow-layout"><div className="flow-main">{step === 1 && <><div className="eyebrow">SELECT YOUR SESSION</div><h1>Make it a<br /><em>good one.</em></h1><div className="selection-card"><div className="mini-court-diagram"><span /><i /></div><div><span className="summary-label">YOUR PICK</span><h3>Court 02</h3><p>Wednesday, 24 April · 8:00 – 9:00 AM</p><span className="price">₱450 <small>per hour</small></span></div><button className="edit-button" onClick={onBack}>Edit</button></div><button className="dark-button wide" onClick={() => setStep(2)}>Continue to details <ArrowRight size={16} /></button></>}{step === 2 && <><div className="eyebrow">YOUR DETAILS</div><h1>Who’s<br /><em>playing?</em></h1><div className="form-grid"><label>Full name<input placeholder="Alex dela Cruz" /></label><label>Email address<input placeholder="alex@example.com" type="email" /></label><label>Phone number<input placeholder="+63 917 000 0000" /></label><label>Players<select value={maxPlayers} disabled aria-label="Maximum players for this session"><option value={2}>2 players</option><option value={4}>4 players</option><option value={6}>6 players</option><option value={8}>8 players</option></select></label></div><button className="dark-button wide" onClick={() => setStep(3)}>Review booking <ArrowRight size={16} /></button></>}{step === 3 && <><div className="eyebrow">ALMOST THERE</div><h1>Lock in<br /><em>your game.</em></h1><div className="confirm-card"><div><span className="summary-label">COURT 02 / WED 24 APRIL</span><h3>8:00 – 9:00 AM</h3><p>Indoor tournament surface · {maxPlayers} player capacity · 2 joined</p><CapacityMeter joined={2} max={maxPlayers} /></div><strong>₱450</strong></div><label className="check-row"><input type="checkbox" defaultChecked /> I agree to the 12-hour cancellation policy.</label><button className="lime-button wide" onClick={() => { toast("Booking confirmed — choose your calendar next"); setStep(4); }}><CalendarPlus size={16} /> Confirm booking <ArrowRight size={16} /></button></>}{step === 4 && <><div className="eyebrow">BOOKING CONFIRMED</div><h1>See you<br /><em>on court.</em></h1><div className="calendar-success"><CalendarDays size={21} /><div><strong>Your Court 02 session is locked in.</strong><span>Add it to Google Calendar so the court, time, and capacity stay on your schedule.</span></div></div><div className="calendar-action-row"><button className="lime-button" onClick={() => addToGoogleCalendar(calendarEvent)}><CalendarPlus size={16} /> Add to Google Calendar</button><button className="outline-button" onClick={onBack}>Book another court</button></div></>}</div><aside className="flow-aside"><div className="aside-court"><div className="mini-court-diagram large"><span /><i /></div></div><div className="aside-detail"><span className="summary-label">BASELINE PICKLE CLUB</span><h3>{step === 4 ? "You’re on the list." : "Great choice."}</h3><p>{step === 4 ? "A calendar event keeps the game from getting lost in the shuffle." : "Your court is held for 10 minutes while you finish booking."}</p><div className="aside-total"><span>Total</span><strong>₱450</strong></div></div></aside></div></main>;
 }
 
-function AccountView() { return <main className="account-page"><div className="account-header"><div><div className="eyebrow">MEMBER AREA</div><h1>Hey, Alex.</h1><p>Your next good game is already on the calendar.</p></div><button className="dark-button" onClick={() => toast("Profile settings opened")}>Account settings <Settings2 size={16} /></button></div><div className="upcoming-card"><div className="upcoming-top"><span className="status-pill">UPCOMING</span><span>Booking #BL-240424-02</span></div><div className="upcoming-content"><div><span className="summary-label">WEDNESDAY, 24 APRIL 2024</span><h2>Court 02</h2><p>8:00 – 9:00 AM · 2 players</p></div><div className="upcoming-actions"><button className="outline-button" onClick={() => toast("Reschedule options opened")}>Reschedule</button><button className="quiet-button" onClick={() => toast("Cancellation policy shown")}>Cancel booking</button></div></div></div><div className="account-columns"><section><div className="section-title"><h2>Past bookings</h2><button className="underlined-link">View all <ArrowRight size={14} /></button></div>{["Court 01 · 18 April", "Court 03 · 11 April", "Court 02 · 04 April"].map((item, i) => <div className="history-row" key={item}><div className="history-icon"><CalendarDays size={17} /></div><div><strong>{item}</strong><span>60 minutes · ₱450</span></div><span className="history-status">Completed</span></div>)}</section><aside className="member-card"><Sparkles size={18} /><span>MEMBER SINCE 2023</span><strong>Keep your<br />rally going.</strong><button onClick={() => toast("Invite link copied")}>Invite a friend <ArrowRight size={14} /></button></aside></div></main>; }
+function AccountView() { return <main className="account-page"><div className="account-header"><div><div className="eyebrow">MEMBER AREA</div><h1>Hey, Alex.</h1><p>Your next good game is already on the calendar.</p></div><button className="dark-button" onClick={() => toast("Profile settings opened")}>Account settings <Settings2 size={16} /></button></div><div className="upcoming-card"><div className="upcoming-top"><span className="status-pill">UPCOMING</span><span>Booking #BL-240424-02</span></div><div className="upcoming-content"><div><span className="summary-label">WEDNESDAY, 24 APRIL 2024</span><h2>Court 02</h2><p>8:00 – 9:00 AM · 2 players</p></div><div className="upcoming-actions"><button className="outline-button" onClick={() => toast("Reschedule options opened")}>Reschedule</button><button className="outline-button calendar-small" onClick={() => addToGoogleCalendar({ title: "Baseline Pickle Club · Court 02", details: "Court booking · 2 players joined.", location: "Baseline Pickle Club, Cebu City", start: "20240424T080000", end: "20240424T090000" })}><CalendarPlus size={14} /> Calendar</button><button className="quiet-button" onClick={() => toast("Cancellation policy shown")}>Cancel booking</button></div></div></div><div className="account-columns"><section><div className="section-title"><h2>Past bookings</h2><button className="underlined-link">View all <ArrowRight size={14} /></button></div>{["Court 01 · 18 April", "Court 03 · 11 April", "Court 02 · 04 April"].map((item, i) => <div className="history-row" key={item}><div className="history-icon"><CalendarDays size={17} /></div><div><strong>{item}</strong><span>60 minutes · ₱450</span></div><span className="history-status">Completed</span></div>)}</section><aside className="member-card"><Sparkles size={18} /><span>MEMBER SINCE 2023</span><strong>Keep your<br />rally going.</strong><button onClick={() => toast("Invite link copied")}>Invite a friend <ArrowRight size={14} /></button></aside></div></main>; }
+
+function OpenPlayView({ onBack }: { onBack: () => void }) {
+  type Player = { name: string; level: string; games: number; wait: number; joined: string };
+  const [rotationVersion, setRotationVersion] = useState(0);
+  const [maxPlayers, setMaxPlayers] = useState(12);
+  const players: Player[] = [
+    { name: "Alex dela Cruz", level: "3.5", games: 1, wait: 0, joined: "6:05 PM" },
+    { name: "Mia Santos", level: "3.0", games: 1, wait: 2, joined: "6:08 PM" },
+    { name: "Jon Bell", level: "3.5", games: 0, wait: 8, joined: "6:02 PM" },
+    { name: "Camille Reyes", level: "4.0", games: 1, wait: 3, joined: "6:12 PM" },
+    { name: "Paolo Lim", level: "3.0", games: 0, wait: 11, joined: "6:15 PM" },
+    { name: "Nina Garcia", level: "3.5", games: 0, wait: 7, joined: "6:18 PM" },
+    { name: "Rafael Tan", level: "4.0", games: 1, wait: 4, joined: "6:20 PM" },
+    { name: "Bea Navarro", level: "3.0", games: 0, wait: 9, joined: "6:22 PM" },
+  ];
+  const queue = useMemo(() => [...players].sort((a, b) => a.games - b.games || b.wait - a.wait || ((players.indexOf(a) + rotationVersion) % players.length) - ((players.indexOf(b) + rotationVersion) % players.length)), [rotationVersion]);
+  const joined = players.length;
+  return <main className="openplay-page"><div className="openplay-top"><button className="back-link" onClick={onBack}><ChevronLeft size={16} /> Back to club</button><div className="eyebrow">OPEN PLAY HOST MODE</div><button className="outline-button" onClick={() => addToGoogleCalendar({ title: "Baseline Open Play · Wednesday", details: "Hosted open play session. Rotation order is managed for equal rest time.", location: "Baseline Pickle Club, Cebu City", start: "20240424T180000", end: "20240424T200000" })}><CalendarPlus size={15} /> Add session to Google Calendar</button></div><div className="openplay-hero"><div><div className="eyebrow">WEDNESDAY · 6:00–8:00 PM · COURT 03</div><h1>Keep the rally<br /><em>moving.</em></h1><p>Run an open play where every player gets the most court time with the least waiting. The queue favors players with fewer games and longer rest first.</p></div><div className="openplay-capacity"><span className="summary-label">SESSION CAPACITY</span><strong>{joined} <small>/ {maxPlayers}</small></strong><CapacityMeter joined={joined} max={maxPlayers} label="players joined" /><label>Host max<select value={maxPlayers} onChange={(event) => setMaxPlayers(Number(event.target.value))}><option value={8}>8 players</option><option value={12}>12 players</option><option value={16}>16 players</option></select></label></div></div><div className="openplay-grid"><section className="rotation-card"><div className="rotation-heading"><div><span className="eyebrow">FAIR ROTATION ORDER</span><h2>Who plays next.</h2></div><button className="lime-button" onClick={() => { setRotationVersion((version) => version + 1); toast("Rotation rebalanced for equal rest time"); }}><RefreshCw size={15} /> Rebalance queue</button></div><p className="rotation-note"><Crown size={15} /> Priority is calculated from games played, then minutes waiting. No one gets stuck on the sideline.</p><div className="rotation-list">{queue.map((player, index) => <div className="rotation-row" key={player.name}><span className="rotation-rank">{index + 1}</span><div className="player-avatar">{player.name.split(" ").map((part) => part[0]).join("")}</div><div className="rotation-player"><strong>{player.name}</strong><span>Level {player.level} · joined {player.joined}</span></div><div className="player-games"><strong>{player.games}</strong><span>games</span></div><div className="player-wait"><strong>{player.wait}m</strong><span>rest</span></div><span className={`play-next ${index < 4 ? "next" : "queued"}`}>{index < 4 ? "NEXT GAME" : "IN QUEUE"}</span></div>)}</div></section><aside className="host-tools"><div className="eyebrow light">HOST TOOLKIT</div><h2>More play.<br /><em>Less waiting.</em></h2><div className="host-stat"><strong>4</strong><span>players per game</span></div><div className="host-stat"><strong>11m</strong><span>longest current rest</span></div><button className="outline-light" onClick={() => toast("Current game marked complete; queue advanced")}>Complete current game <ArrowRight size={14} /></button></aside></div><div className="fairness-explainer"><div><span className="eyebrow">HOW THE QUEUE WORKS</span><h2>Equal turns, by design.</h2></div><div className="fairness-steps"><span><b>01</b> Fewer games move first.</span><span><b>02</b> Longer rest breaks ties.</span><span><b>03</b> Host advances the next four.</span></div></div></main>;
+}
 
 function AdminShell({ view, setView, children, exit }: { view: AdminView; setView: (v: AdminView) => void; children: React.ReactNode; exit: () => void }) { const nav = [{ id: "dashboard", label: "Overview", icon: LayoutDashboard }, { id: "schedule", label: "Schedule", icon: CalendarDays }, { id: "resources", label: "Resources", icon: Trophy }, { id: "customers", label: "Customers", icon: Users }, { id: "settings", label: "Settings", icon: Settings2 }] as const; return <div className="admin-shell"><aside className="admin-sidebar"><div className="admin-brand"><Mark /><span>baseline <small>club ops</small></span></div><div className="sidebar-label">WORKSPACE</div><nav>{nav.map(({ id, label, icon: Icon }) => <button key={id} className={view === id ? "active" : ""} onClick={() => setView(id)}><Icon size={17} />{label}</button>)}</nav><div className="sidebar-bottom"><div className="admin-user"><span>AC</span><div><strong>Alex Cruz</strong><small>Owner</small></div><MoreHorizontal size={16} /></div><button className="exit-admin" onClick={exit}><ChevronLeft size={14} /> View public site</button></div></aside><main className="admin-content">{children}</main></div>; }
 
@@ -202,12 +242,13 @@ function SimpleAdmin({ kind }: { kind: Exclude<AdminView, "dashboard" | "schedul
 
 export default function Home() {
   const [mode, setMode] = useState<Mode>(() => window.location.pathname.startsWith("/admin") ? "admin" : "public");
-  const [view, setView] = useState<PublicView>("home");
+  const [view, setView] = useState<PublicView>(() => { const requested = new URLSearchParams(window.location.search).get("view"); return requested === "book" || requested === "account" || requested === "openplay" ? requested : "home"; });
+  const [bookingMaxPlayers, setBookingMaxPlayers] = useState(4);
   const [adminView, setAdminView] = useState<AdminView>(() => { const requested = new URLSearchParams(window.location.search).get("view"); return requested === "schedule" || requested === "resources" || requested === "customers" || requested === "settings" ? requested : "dashboard"; });
   const goBook = () => setView("book");
   const enterAdmin = () => { window.history.pushState({}, "", "/admin"); setMode("admin"); };
   const exitAdmin = () => { window.history.pushState({}, "", "/"); setMode("public"); };
   useEffect(() => { const onPopState = () => setMode(window.location.pathname.startsWith("/admin") ? "admin" : "public"); window.addEventListener("popstate", onPopState); return () => window.removeEventListener("popstate", onPopState); }, []);
   if (mode === "admin") return <AdminShell view={adminView} setView={setAdminView} exit={exitAdmin}>{adminView === "dashboard" ? <AdminDashboard setView={setAdminView} /> : adminView === "schedule" ? <ScheduleView /> : <SimpleAdmin kind={adminView} />}</AdminShell>;
-  return <div className="public-shell"><PublicHeader view={view} setView={setView} onAdmin={enterAdmin} /><div className="admin-switch"><button onClick={enterAdmin}><LayoutDashboard size={14} /> Open club ops</button></div>{view === "home" && <HomeView goBook={goBook} />}{view === "book" && <><BookingBoard onConfirm={() => setView("book")} /><BookingFlow onBack={() => setView("home")} /></>}{view === "account" && <AccountView />}</div>;
+  return <div className="public-shell"><PublicHeader view={view} setView={setView} onAdmin={enterAdmin} onOpenPlay={() => setView("openplay")} /><div className="admin-switch"><button onClick={enterAdmin}><LayoutDashboard size={14} /> Open club ops</button></div>{view === "home" && <HomeView goBook={goBook} />}{view === "book" && <><BookingBoard onConfirm={(_court, maxPlayers) => { setBookingMaxPlayers(maxPlayers); }} /><BookingFlow maxPlayers={bookingMaxPlayers} onBack={() => setView("home")} /></>}{view === "account" && <AccountView />}{view === "openplay" && <OpenPlayView onBack={() => setView("home")} />}</div>;
 }

@@ -1,6 +1,7 @@
-# Customers Data Table Follow-up
+# Booking Workflow Follow-up
 
-- [x] Add sortable customer columns for name, bookings, spend, and status.
-- [x] Add search, status, and booking filters with a clear-filters state.
-- [x] Add responsive table behavior and empty-state feedback.
-- [x] Verify the Customers view and save an updated checkpoint.
+- [x] Add Google Calendar sync entry points for confirmed bookings and host sessions.
+- [x] Add Open Play host controls for player order, wait time, and rotation fairness.
+- [x] Add Book a Court joined/max player counters and full-capacity states.
+- [x] Verify the booking and admin flows at desktop and mobile widths.
+- [x] Save an updated project checkpoint.
