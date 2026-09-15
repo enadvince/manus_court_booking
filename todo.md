@@ -1,6 +1,6 @@
-# Admin View Follow-up
+# Customers Data Table Follow-up
 
-- [ ] Add a first-class `/admin` route for the club operations workspace.
-- [ ] Make public navigation and the admin view provide clear two-way access.
-- [ ] Verify the admin dashboard, schedule, resource, customer, and settings screens at desktop and mobile widths.
-- [ ] Save an updated checkpoint after verification.
+- [x] Add sortable customer columns for name, bookings, spend, and status.
+- [x] Add search, status, and booking filters with a clear-filters state.
+- [x] Add responsive table behavior and empty-state feedback.
+- [x] Verify the Customers view and save an updated checkpoint.
