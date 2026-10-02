@@ -5,6 +5,8 @@ import {
   ArrowRight,
   CalendarDays,
   CalendarPlus,
+  CheckCircle2,
+  CircleAlert,
   Search,
   SlidersHorizontal,
   ChevronDown,
@@ -16,6 +18,7 @@ import {
   Gauge,
   LayoutDashboard,
   Menu,
+  MessageSquare,
   MoreHorizontal,
   Plus,
   RefreshCw,
@@ -24,8 +27,10 @@ import {
   Sparkles,
   Trophy,
   Users,
+  Wrench,
   X,
 } from "lucide-react";
+import { dashboardAttention, dashboardBookings, getDashboardSummary, revenuePulse } from "@/lib/adminDashboard";
 
 type Mode = "public" | "admin";
 type PublicView = "home" | "book" | "account" | "openplay";
@@ -196,8 +201,46 @@ function OpenPlayView({ onBack }: { onBack: () => void }) {
 
 function AdminShell({ view, setView, children, exit }: { view: AdminView; setView: (v: AdminView) => void; children: React.ReactNode; exit: () => void }) { const nav = [{ id: "dashboard", label: "Overview", icon: LayoutDashboard }, { id: "schedule", label: "Schedule", icon: CalendarDays }, { id: "resources", label: "Resources", icon: Trophy }, { id: "customers", label: "Customers", icon: Users }, { id: "settings", label: "Settings", icon: Settings2 }] as const; return <div className="admin-shell"><aside className="admin-sidebar"><div className="admin-brand"><Mark /><span>baseline <small>club ops</small></span></div><div className="sidebar-label">WORKSPACE</div><nav>{nav.map(({ id, label, icon: Icon }) => <button key={id} className={view === id ? "active" : ""} onClick={() => setView(id)}><Icon size={17} />{label}</button>)}</nav><div className="sidebar-bottom"><div className="admin-user"><span>AC</span><div><strong>Alex Cruz</strong><small>Owner</small></div><MoreHorizontal size={16} /></div><button className="exit-admin" onClick={exit}><ChevronLeft size={14} /> View public site</button></div></aside><main className="admin-content">{children}</main></div>; }
 
-function AdminDashboard({ setView }: { setView: (v: AdminView) => void }) { return <><div className="admin-topbar"><div><span className="admin-breadcrumb">WORKSPACE / OVERVIEW</span><h1>Good morning, Alex.</h1></div><div className="admin-actions"><button className="outline-button" onClick={() => toast("Date picker opened")}>Today · 24 Apr <ChevronDown size={15} /></button><button className="lime-button" onClick={() => setView("schedule")}><Plus size={16} /> Add booking</button></div></div><div className="kpi-grid"><div className="kpi-card accent"><span>BOOKINGS TODAY</span><strong>24</strong><small>↑ 12% vs last Wednesday</small><div className="spark-bars">{[35,50,42,67,55,78,62,92,80,100].map((h, i) => <i key={i} style={{ height: `${h}%` }} />)}</div></div><div className="kpi-card"><span>REVENUE THIS WEEK</span><strong>₱48,240</strong><small className="positive">↑ 8.4% vs last week</small></div><div className="kpi-card"><span>COURT UTILIZATION</span><strong>76<span>%</span></strong><small>Peak hours: 6–9 PM</small><div className="utilization"><i /></div></div><div className="kpi-card"><span>ACTIVE MEMBERS</span><strong>318</strong><small>14 new this month</small></div></div><div className="dashboard-grid"><section className="ops-card"><div className="card-heading"><div><span className="admin-breadcrumb">LIVE SCHEDULE</span><h2>Today on court</h2></div><button className="underlined-link" onClick={() => setView("schedule")}>Full schedule <ArrowRight size={14} /></button></div><div className="ops-list">{[{time:"08:00", court:"Court 02", name:"Alex dela Cruz", type:"Member booking", color:"lime"},{time:"09:00", court:"Court 01", name:"Mia Santos", type:"Member booking", color:"blue"},{time:"10:00", court:"Court 03", name:"Open play session", type:"12 spots · 8 booked", color:"yellow"},{time:"11:00", court:"Court 04", name:"Available", type:"No booking yet", color:"muted"}].map(item => <div className="ops-row" key={item.time}><span className="ops-time">{item.time}</span><span className={`ops-dot ${item.color}`} /><div><strong>{item.court}</strong><span>{item.name} · {item.type}</span></div><button className="row-more" onClick={() => toast("Booking actions opened")}><MoreHorizontal size={16} /></button></div>)}</div></section><aside className="insight-card"><div className="insight-orbit"><Gauge size={24} /></div><span className="admin-breadcrumb">WEEKLY INSIGHT</span><h2>Friday is your<br /><em>power hour.</em></h2><p>Courts are 94% full between 6–8 PM. Consider opening a second open-play session.</p><button className="outline-light" onClick={() => toast("Insight saved")}>Save insight <ArrowRight size={14} /></button></aside></div></>; }
+function AdminDashboard({ setView }: { setView: (v: AdminView) => void }) {
+  const [completedItems, setCompletedItems] = useState<string[]>([]);
+  const [selectedRange, setSelectedRange] = useState("Today · 24 Apr");
+  const summary = getDashboardSummary(dashboardBookings);
+  const visibleAttention = dashboardAttention.filter((item) => !completedItems.includes(item.id));
+  const completeAttention = (id: string, title: string) => {
+    setCompletedItems((items) => [...items, id]);
+    toast(`${title} marked complete`);
+  };
 
+  return <>
+    <div className="admin-topbar">
+      <div><span className="admin-breadcrumb">WORKSPACE / OVERVIEW</span><h1>Good morning, Alex.</h1><p className="admin-subtitle">Here’s what needs your attention before the first evening rally.</p></div>
+      <div className="admin-actions"><button className="outline-button" onClick={() => { setSelectedRange(selectedRange === "Today · 24 Apr" ? "Tomorrow · 25 Apr" : "Today · 24 Apr"); toast(`${selectedRange === "Today · 24 Apr" ? "Tomorrow" : "Today"} selected`); }}>{selectedRange} <ChevronDown size={15} /></button><button className="lime-button" onClick={() => setView("schedule")}><Plus size={16} /> Add booking</button></div>
+    </div>
+
+    <section className="ops-pulse" aria-label="Daily operations pulse">
+      <div><span className="admin-breadcrumb">DAILY OPERATIONS PULSE</span><h2>{summary.confirmed + summary.openPlay} sessions on the board.</h2><p>{summary.available} court still open before lunch · evening peak starts at 6:00 PM</p></div>
+      <div className="pulse-stat"><strong>76%</strong><span>utilization today</span><div className="pulse-track"><i /></div></div>
+      <div className="pulse-stat"><strong>₱8,640</strong><span>expected today</span><div className="pulse-bars">{revenuePulse.map((height, index) => <i key={index} style={{ height: `${height}%` }} />)}</div></div>
+    </section>
+
+    <div className="kpi-grid">
+      <div className="kpi-card accent"><span>BOOKINGS TODAY</span><strong>24</strong><small>↑ 12% vs last Wednesday</small><div className="spark-bars">{[35,50,42,67,55,78,62,92,80,100].map((h, i) => <i key={i} style={{ height: `${h}%` }} />)}</div></div>
+      <div className="kpi-card"><span>REVENUE THIS WEEK</span><strong>₱48,240</strong><small className="positive">↑ 8.4% vs last week</small></div>
+      <div className="kpi-card"><span>COURT UTILIZATION</span><strong>76<span>%</span></strong><small>Peak hours: 6–9 PM</small><div className="utilization"><i /></div></div>
+      <div className="kpi-card"><span>ACTIVE MEMBERS</span><strong>318</strong><small>14 new this month</small></div>
+    </div>
+
+    <div className="dashboard-grid">
+      <section className="ops-card"><div className="card-heading"><div><span className="admin-breadcrumb">LIVE SCHEDULE</span><h2>Today on court</h2></div><button className="underlined-link" onClick={() => setView("schedule")}>Full schedule <ArrowRight size={14} /></button></div><div className="ops-list">{dashboardBookings.map((item) => <div className="ops-row" key={item.time}><span className="ops-time">{item.time}</span><span className={`ops-dot ${item.color}`} /><div><strong>{item.court}</strong><span>{item.name} · {item.type}</span></div>{item.status === "available" ? <button className="row-action" onClick={() => setView("schedule")}>Fill slot <ArrowRight size={13} /></button> : <button className="row-more" onClick={() => toast(`${item.court} booking actions opened`)}><MoreHorizontal size={16} /></button>}</div>)}</div></section>
+      <aside className="insight-card"><div className="insight-orbit"><Gauge size={24} /></div><span className="admin-breadcrumb">WEEKLY INSIGHT</span><h2>Friday is your<br /><em>power hour.</em></h2><p>Courts are 94% full between 6–8 PM. Consider opening a second open-play session.</p><button className="outline-light" onClick={() => toast("Insight saved")}>Save insight <ArrowRight size={14} /></button></aside>
+    </div>
+
+    <div className="dashboard-lower-grid">
+      <section className="attention-card"><div className="card-heading"><div><span className="admin-breadcrumb">NEEDS ATTENTION</span><h2>Keep the floor moving.</h2></div><span className="attention-count">{visibleAttention.length} open</span></div>{visibleAttention.length === 0 ? <div className="attention-empty"><CheckCircle2 size={18} /><span>All clear. The club is ready for today.</span></div> : <div className="attention-list">{visibleAttention.map((item) => <div className="attention-row" key={item.id}><span className={`attention-icon ${item.tone}`}>{item.tone === "warning" ? <CircleAlert size={15} /> : item.tone === "info" ? <Wrench size={15} /> : <Users size={15} />}</span><div><strong>{item.title}</strong><span>{item.detail}</span></div><button className="quiet-button" onClick={() => completeAttention(item.id, item.title)}><CheckCircle2 size={15} /> Done</button></div>)}</div>}</section>
+      <section className="quick-actions-card"><span className="admin-breadcrumb">QUICK ACTIONS</span><h2>Make the next move.</h2><div className="quick-actions-list"><button onClick={() => setView("schedule")}><Plus size={16} /><span><strong>Add booking</strong><small>Reserve a court for a member</small></span><ArrowRight size={14} /></button><button onClick={() => toast("Open play setup started")}><Sparkles size={16} /><span><strong>Start open play</strong><small>Set up a hosted session</small></span><ArrowRight size={14} /></button><button onClick={() => toast("Member message composer opened")}><MessageSquare size={16} /><span><strong>Message members</strong><small>Send an update to today’s players</small></span><ArrowRight size={14} /></button></div></section>
+    </div>
+  </>;
+}
 function ScheduleView() { return <><div className="admin-topbar"><div><span className="admin-breadcrumb">WORKSPACE / SCHEDULE</span><h1>Schedule</h1></div><div className="admin-actions"><button className="outline-button"><ChevronLeft size={15} /></button><button className="outline-button">Wed, 24 Apr <ChevronDown size={15} /></button><button className="outline-button"><ChevronRight size={15} /></button><button className="lime-button" onClick={() => toast("New booking form opened")}><Plus size={16} /> Add booking</button></div></div><div className="schedule-card"><div className="schedule-head"><div><span className="admin-breadcrumb">WEDNESDAY, 24 APRIL</span><h2>All courts</h2></div><div className="legend"><span><i className="legend-open" /> Available</span><span><i className="legend-busy" /> Booked</span><span><i className="legend-selected" /> Open play</span></div></div><div className="schedule-grid"><div className="schedule-times"><span /><span>6 AM</span><span>8 AM</span><span>10 AM</span><span>12 PM</span><span>2 PM</span><span>4 PM</span><span>6 PM</span><span>8 PM</span></div>{courts.map((court, idx) => <div className="schedule-row" key={court.name}><div className="schedule-label"><strong>{court.name}</strong><small>{idx % 2 ? "Blue" : "Green"} lane</small></div><div className="schedule-cells">{[0,1,2,3,4,5,6,7].map((_, i) => <button key={i} className={(i + idx) % 4 === 0 ? "booked" : (i === 5 ? "open-play" : "free")} onClick={() => toast("Slot actions opened")}><span>{(i + idx) % 4 === 0 ? "BOOKED" : i === 5 ? "OPEN PLAY" : ""}</span></button>)}</div></div>)}</div></div></>; }
 
 function CustomerTable() {
