@@ -18,6 +18,7 @@ import {
   Crown,
   Gauge,
   LayoutDashboard,
+  LogOut,
   MessageSquare,
   MoreHorizontal,
   Plus,
@@ -31,16 +32,18 @@ import {
   X,
 } from "lucide-react";
 import { dashboardAttention, dashboardBookings, getDashboardSummary, revenuePulse } from "@/lib/adminDashboard";
+import { firstName, signOutMember, useSession, type Member } from "@/lib/auth";
 import { copyText } from "@/lib/clipboard";
 import { openExternal } from "@/lib/external";
 import { NAVIGATE_EVENT, targetToUrl, urlToTarget, type AdminView, type PublicView, type SiteTarget } from "@/lib/navigation";
 import { contact, posts } from "@/lib/siteContent";
 import { CodeBlock } from "@/components/site/CodeBlock";
 import { FaqSection, NewsletterSignup, NewsView, PostDates } from "@/components/site/ContentSections";
-import { ConfirmDialog, SignInDialog } from "@/components/site/Dialogs";
+import { ConfirmDialog } from "@/components/site/Dialogs";
 import { MobileMenu } from "@/components/site/MobileMenu";
 import { openSearch } from "@/components/site/SiteSearch";
 import { FloatingContact, MAIN_ID } from "@/components/site/SiteChrome";
+import { SignInView } from "@/components/site/SignInView";
 import { ThemeToggle } from "@/components/site/ThemeToggle";
 import { scrollBehavior, useScrolled } from "@/components/site/hooks";
 
@@ -80,6 +83,10 @@ function CapacityMeter({ joined, max, label = "players joined" }: { joined: numb
   return <div className="capacity-meter"><div className="capacity-heading"><span><Users size={14} /> {label}</span><strong>{joined} <small>/ {max}</small></strong></div><div className="capacity-track"><i style={{ width: `${percentage}%` }} /></div><span className="capacity-note">{joined >= max ? "Session full" : `${max - joined} spot${max - joined === 1 ? "" : "s"} open · host max ${max}`}</span></div>;
 }
 
+function initials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+}
+
 function Mark({ dark = false }: { dark?: boolean }) {
   return (
     <span className={`brand-mark ${dark ? "brand-mark-dark" : ""}`} aria-hidden="true">
@@ -88,7 +95,7 @@ function Mark({ dark = false }: { dark?: boolean }) {
   );
 }
 
-function PublicHeader({ view, setView, onAdmin, onOpenPlay, onSignIn }: { view: PublicView; setView: (view: PublicView) => void; onAdmin: () => void; onOpenPlay: () => void; onSignIn: () => void }) {
+function PublicHeader({ view, setView, onAdmin, onOpenPlay, member, onSignOut }: { view: PublicView; setView: (view: PublicView) => void; onAdmin: () => void; onOpenPlay: () => void; member: Member | null; onSignOut: () => void }) {
   const scrolled = useScrolled(8);
   const navItems: { id: PublicView; label: string }[] = [{ id: "home", label: "Club" }, { id: "book", label: "Book a court" }, { id: "news", label: "News" }, { id: "account", label: "My bookings" }];
   return (
@@ -100,11 +107,11 @@ function PublicHeader({ view, setView, onAdmin, onOpenPlay, onSignIn }: { view: 
         {navItems.map((item) => <button key={item.id} className={view === item.id ? "active" : ""} aria-current={view === item.id ? "page" : undefined} onClick={() => setView(item.id)}>{item.label}</button>)}
       </nav>
       <div className="header-actions">
-        <button className={`text-button desktop-only ${view === "openplay" ? "active" : ""}`} aria-current={view === "openplay" ? "page" : undefined} onClick={onOpenPlay}>Open Play</button><button className="text-button desktop-only" onClick={onAdmin}>Club ops</button><button className="text-button desktop-only" onClick={onSignIn}>Sign in</button>
+        <button className={`text-button desktop-only ${view === "openplay" ? "active" : ""}`} aria-current={view === "openplay" ? "page" : undefined} onClick={onOpenPlay}>Open Play</button><button className="text-button desktop-only" onClick={onAdmin}>Club ops</button>{member ? <button className="text-button desktop-only member-chip" onClick={() => setView("account")} aria-label={`Signed in as ${member.name}. Open my bookings`}><span aria-hidden="true">{initials(member.name)}</span>{firstName(member.name)}</button> : <button className={`text-button desktop-only ${view === "signin" ? "active" : ""}`} aria-current={view === "signin" ? "page" : undefined} onClick={() => setView("signin")}>Sign in</button>}
         <button className="icon-button search-trigger" onClick={openSearch} aria-label="Search the site (press /)" title="Search (/ or Ctrl K)"><Search size={18} /></button>
         <ThemeToggle className="icon-button desktop-only" />
         <button className="pill-button" onClick={() => setView("book")}>Book now <ArrowRight size={15} /></button>
-        <MobileMenu view={view} onNavigate={setView} onAdmin={onAdmin} onSignIn={onSignIn} onSearch={openSearch} />
+        <MobileMenu view={view} onNavigate={setView} onAdmin={onAdmin} member={member} onSignOut={onSignOut} onSearch={openSearch} />
       </div>
     </header>
   );
@@ -199,10 +206,10 @@ function BookingFlow({ onBack, maxPlayers = 4 }: { onBack: () => void; maxPlayer
   return <div className="flow-page"><div className="flow-top"><button className="back-link" onClick={onBack}><ChevronLeft size={16} /> Back to courts</button><div className="stepper">{steps.map((label, i) => <div key={label} className={`step ${step >= i + 1 ? "done" : ""}`}><span>{i + 1}</span>{label}</div>)}</div><span className="secure-note"><ShieldCheck size={14} /> Secure booking</span></div><div className="flow-layout"><div className="flow-main">{step === 1 && <><div className="eyebrow">SELECT YOUR SESSION</div><h1>Make it a<br /><em>good one.</em></h1><div className="selection-card"><div className="mini-court-diagram"><span /><i /></div><div><span className="summary-label">YOUR PICK</span><h3>Court 02</h3><p>Wednesday, 24 April · 8:00 – 9:00 AM</p><span className="price">₱450 <small>per hour</small></span></div><button className="edit-button" onClick={onBack}>Edit</button></div><button className="dark-button wide" onClick={() => setStep(2)}>Continue to details <ArrowRight size={16} /></button></>}{step === 2 && <><div className="eyebrow">YOUR DETAILS</div><h1>Who’s<br /><em>playing?</em></h1><div className="form-grid"><label>Full name<input placeholder="Alex dela Cruz" /></label><label>Email address<input placeholder="alex@example.com" type="email" /></label><label>Phone number<input placeholder="+63 917 000 0000" /></label><label>Players<select value={maxPlayers} disabled aria-label="Maximum players for this session"><option value={2}>2 players</option><option value={4}>4 players</option><option value={6}>6 players</option><option value={8}>8 players</option></select></label></div><button className="dark-button wide" onClick={() => setStep(3)}>Review booking <ArrowRight size={16} /></button></>}{step === 3 && <><div className="eyebrow">ALMOST THERE</div><h1>Lock in<br /><em>your game.</em></h1><div className="confirm-card"><div><span className="summary-label">COURT 02 / WED 24 APRIL</span><h3>8:00 – 9:00 AM</h3><p>Indoor tournament surface · {maxPlayers} player capacity · 2 joined</p><CapacityMeter joined={2} max={maxPlayers} /></div><strong>₱450</strong></div><label className="check-row"><input type="checkbox" defaultChecked /> I agree to the 12-hour cancellation policy.</label><button className="lime-button wide" disabled={confirming} onClick={confirmBooking}>{confirming ? <><span className="spinner" aria-hidden="true" /> Confirming…</> : <><CalendarPlus size={16} /> Confirm booking <ArrowRight size={16} /></>}</button></>}{step === 4 && <><div className="eyebrow">BOOKING CONFIRMED</div><h1>See you<br /><em>on court.</em></h1><div className="calendar-success"><CalendarDays size={21} /><div><strong>Your Court 02 session is locked in.</strong><span>Add it to Google Calendar so the court, time, and capacity stay on your schedule.</span></div></div><div className="calendar-action-row"><button className="lime-button" onClick={() => addToGoogleCalendar(calendarEvent)}><CalendarPlus size={16} /> Add to Google Calendar</button><button className="outline-button" onClick={onBack}>Book another court</button></div></>}</div><aside className="flow-aside"><div className="aside-court"><div className="mini-court-diagram large"><span /><i /></div></div><div className="aside-detail"><span className="summary-label">BASELINE PICKLE CLUB</span><h3>{step === 4 ? "You’re on the list." : "Great choice."}</h3><p>{step === 4 ? "A calendar event keeps the game from getting lost in the shuffle." : "Your court is held for 10 minutes while you finish booking."}</p><div className="aside-total"><span>Total</span><strong>₱450</strong></div></div></aside></div></div>;
 }
 
-function AccountView({ goBook }: { goBook: () => void }) {
+function AccountView({ goBook, member, onSignOut }: { goBook: () => void; member: Member; onSignOut: () => void }) {
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelled, setCancelled] = useState(false);
-  return <div className="account-page"><div className="account-header"><div><div className="eyebrow">MEMBER AREA</div><h1>Hey, Alex.</h1><p>Your next good game is already on the calendar.</p></div><button className="dark-button" onClick={() => toast("Profile settings opened")}>Account settings <Settings2 size={16} /></button></div><div className={`upcoming-card ${cancelled ? "is-cancelled" : ""}`}><div className="upcoming-top"><span className="status-pill">{cancelled ? "CANCELLED" : "UPCOMING"}</span><span>Booking #BL-240424-02</span></div><div className="upcoming-content"><div><span className="summary-label">WEDNESDAY, 24 APRIL 2024</span><h2>Court 02</h2><p>8:00 – 9:00 AM · 2 players</p></div>{cancelled ? <div className="upcoming-actions"><button className="outline-button" onClick={goBook}>Book another court</button></div> : <div className="upcoming-actions"><button className="outline-button" onClick={() => toast("Reschedule options opened")}>Reschedule</button><button className="outline-button calendar-small" onClick={() => addToGoogleCalendar({ title: "Baseline Pickle Club · Court 02", details: "Court booking · 2 players joined.", location: "Baseline Pickle Club, Cebu City", start: "20240424T080000", end: "20240424T090000" })}><CalendarPlus size={14} /> Calendar</button><button className="quiet-button" onClick={() => setConfirmCancel(true)}>Cancel booking</button></div>}</div></div><div className="account-columns"><section><div className="section-title"><h2>Past bookings</h2><button className="underlined-link">View all <ArrowRight size={14} /></button></div>{["Court 01 · 18 April", "Court 03 · 11 April", "Court 02 · 04 April"].map((item, i) => <div className="history-row" key={item}><div className="history-icon"><CalendarDays size={17} /></div><div><strong>{item}</strong><span>60 minutes · ₱450</span></div><span className="history-status">Completed</span></div>)}</section><aside className="member-card"><Sparkles size={18} /><span>MEMBER SINCE 2023</span><strong>Keep your<br />rally going.</strong><button onClick={async () => toast((await copyText(`${window.location.origin}/?view=book`)) ? "Invite link copied" : "Couldn’t copy the invite link")}>Invite a friend <Copy size={14} /></button></aside></div><ConfirmDialog open={confirmCancel} onOpenChange={setConfirmCancel} title="Cancel your Court 02 booking?" description="Wednesday, 24 April · 8:00 – 9:00 AM. Cancelling frees the court for other players and can’t be undone. Cancellations inside 12 hours of the start aren’t refunded." confirmLabel="Cancel booking" cancelLabel="Keep booking" onConfirm={() => { setCancelled(true); toast("Booking cancelled. Court 02 is back on the board."); }} /></div>;
+  return <div className="account-page"><div className="account-header"><div><div className="eyebrow">MEMBER AREA</div><h1>Hey, {firstName(member.name)}.</h1><p>Your next good game is already on the calendar.</p></div><div className="account-header-actions"><button className="dark-button" onClick={() => toast("Profile settings opened")}>Account settings <Settings2 size={16} /></button><button className="outline-button" onClick={onSignOut}><LogOut size={15} /> Sign out</button></div></div><div className={`upcoming-card ${cancelled ? "is-cancelled" : ""}`}><div className="upcoming-top"><span className="status-pill">{cancelled ? "CANCELLED" : "UPCOMING"}</span><span>Booking #BL-240424-02</span></div><div className="upcoming-content"><div><span className="summary-label">WEDNESDAY, 24 APRIL 2024</span><h2>Court 02</h2><p>8:00 – 9:00 AM · 2 players</p></div>{cancelled ? <div className="upcoming-actions"><button className="outline-button" onClick={goBook}>Book another court</button></div> : <div className="upcoming-actions"><button className="outline-button" onClick={() => toast("Reschedule options opened")}>Reschedule</button><button className="outline-button calendar-small" onClick={() => addToGoogleCalendar({ title: "Baseline Pickle Club · Court 02", details: "Court booking · 2 players joined.", location: "Baseline Pickle Club, Cebu City", start: "20240424T080000", end: "20240424T090000" })}><CalendarPlus size={14} /> Calendar</button><button className="quiet-button" onClick={() => setConfirmCancel(true)}>Cancel booking</button></div>}</div></div><div className="account-columns"><section><div className="section-title"><h2>Past bookings</h2><button className="underlined-link">View all <ArrowRight size={14} /></button></div>{["Court 01 · 18 April", "Court 03 · 11 April", "Court 02 · 04 April"].map((item, i) => <div className="history-row" key={item}><div className="history-icon"><CalendarDays size={17} /></div><div><strong>{item}</strong><span>60 minutes · ₱450</span></div><span className="history-status">Completed</span></div>)}</section><aside className="member-card"><Sparkles size={18} /><span>MEMBER SINCE {new Date(member.createdAt).getFullYear()}</span><strong>Keep your<br />rally going.</strong><button onClick={async () => toast((await copyText(`${window.location.origin}/?view=book`)) ? "Invite link copied" : "Couldn’t copy the invite link")}>Invite a friend <Copy size={14} /></button></aside></div><ConfirmDialog open={confirmCancel} onOpenChange={setConfirmCancel} title="Cancel your Court 02 booking?" description="Wednesday, 24 April · 8:00 – 9:00 AM. Cancelling frees the court for other players and can’t be undone. Cancellations inside 12 hours of the start aren’t refunded." confirmLabel="Cancel booking" cancelLabel="Keep booking" onConfirm={() => { setCancelled(true); toast("Booking cancelled. Court 02 is back on the board."); }} /></div>;
 }
 
 type OpenPlayRole = "host" | "participant";
@@ -348,7 +355,7 @@ export default function Home() {
   const [adminView, setAdminView] = useState<AdminView>(initial.area === "admin" ? initial.view : "dashboard");
   // A fresh object each time so jumping to the same anchor twice still scrolls.
   const [anchor, setAnchor] = useState<{ id: string } | null>(initial.area === "public" && initial.anchor ? { id: initial.anchor } : null);
-  const [signInOpen, setSignInOpen] = useState(false);
+  const member = useSession();
 
   const go = useCallback((target: SiteTarget, updateHistory = true) => {
     if (updateHistory) {
@@ -387,7 +394,19 @@ export default function Home() {
   const enterAdmin = () => go({ area: "admin", view: adminView });
   const exitAdmin = () => go({ area: "public", view });
   const showAdminView = (next: AdminView) => go({ area: "admin", view: next });
+  const signOut = () => {
+    signOutMember();
+    toast("You're signed out. See you on court.");
+    if (view === "account") showView("home");
+  };
+
+  // A signed-in member who lands on the sign-in page goes straight to their bookings.
+  useEffect(() => {
+    if (mode !== "public" || view !== "signin" || !member) return;
+    window.history.replaceState({}, "", targetToUrl({ area: "public", view: "account" }));
+    go({ area: "public", view: "account" }, false);
+  }, [go, member, mode, view]);
 
   if (mode === "admin") return <AdminShell view={adminView} setView={showAdminView} exit={exitAdmin}><div className="view-enter" key={adminView}>{adminView === "dashboard" ? <AdminDashboard setView={showAdminView} /> : adminView === "schedule" ? <ScheduleView /> : <SimpleAdmin kind={adminView} />}</div></AdminShell>;
-  return <div className="public-shell"><PublicHeader view={view} setView={showView} onAdmin={enterAdmin} onOpenPlay={() => showView("openplay")} onSignIn={() => setSignInOpen(true)} /><main id={MAIN_ID} tabIndex={-1} className="view-enter" key={view}>{view === "home" && <HomeView goBook={goBook} go={go} />}{view === "book" && <><BookingBoard onConfirm={(_court, maxPlayers) => { setBookingMaxPlayers(maxPlayers); }} /><BookingFlow maxPlayers={bookingMaxPlayers} onBack={() => showView("home")} /></>}{view === "account" && <AccountView goBook={goBook} />}{view === "openplay" && <OpenPlayView onBack={() => showView("home")} />}{view === "news" && <NewsView onBack={() => showView("home")} />}</main><SignInDialog open={signInOpen} onOpenChange={setSignInOpen} /><FloatingContact /></div>;
+  return <div className="public-shell"><PublicHeader view={view} setView={showView} onAdmin={enterAdmin} onOpenPlay={() => showView("openplay")} member={member} onSignOut={signOut} /><main id={MAIN_ID} tabIndex={-1} className="view-enter" key={view}>{view === "home" && <HomeView goBook={goBook} go={go} />}{view === "book" && <><BookingBoard onConfirm={(_court, maxPlayers) => { setBookingMaxPlayers(maxPlayers); }} /><BookingFlow maxPlayers={bookingMaxPlayers} onBack={() => showView("home")} /></>}{view === "account" && (member ? <AccountView goBook={goBook} member={member} onSignOut={signOut} /> : <SignInView onBack={() => showView("home")} notice="Sign in to see your bookings." />)}{view === "signin" && <SignInView onBack={() => showView("home")} />}{view === "openplay" && <OpenPlayView onBack={() => showView("home")} />}{view === "news" && <NewsView onBack={() => showView("home")} />}</main><FloatingContact /></div>;
 }
