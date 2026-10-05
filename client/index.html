@@ -10,14 +10,40 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#1C5B4F" />
-    <meta name="description" content="Book tournament-ready indoor pickleball courts at Baseline Pickle Club." />    
+    <meta name="description" content="Book tournament-ready indoor pickleball courts at Baseline Pickle Club." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script>
+      // Apply the saved (or system) theme before first paint. Mirrors ThemeContext.
+      (function () {
+        var theme = null;
+        try { theme = localStorage.getItem("theme"); } catch (e) {}
+        if (theme !== "light" && theme !== "dark") {
+          theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        if (theme === "dark") document.documentElement.classList.add("dark");
+        document.documentElement.style.colorScheme = theme;
+      })();
+    </script>
+    <style>
+      /* Boot loader: shown until React replaces the contents of #root. */
+      .boot-loader { position: fixed; inset: 0; display: grid; place-items: center; align-content: center; gap: 18px; background: #F7F9F5; color: #1C5B4F; font: 700 11px/1 system-ui, sans-serif; letter-spacing: .18em; }
+      .dark .boot-loader { background: #0E1513; color: #8FD3BA; }
+      .boot-ball { width: 34px; height: 34px; border-radius: 50%; background: #D7F45B; position: relative; overflow: hidden; animation: boot-bounce .9s cubic-bezier(.23,1,.32,1) infinite alternate; }
+      .boot-ball::before { content: ""; position: absolute; height: 4px; width: 44px; left: -5px; top: 15px; background: #1C5B4F; transform: rotate(-35deg); }
+      @keyframes boot-bounce { from { transform: translateY(0); } to { transform: translateY(-14px); } }
+      @media (prefers-reduced-motion: reduce) { .boot-ball { animation: none; } }
+    </style>
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot-loader" role="status" aria-live="polite">
+        <span class="boot-ball" aria-hidden="true"></span>
+        <span>LOADING COURTS</span>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 
