@@ -817,3 +817,16 @@ button:disabled:hover, button:disabled:active { transform:none; box-shadow:none;
 /* Pre-existing mobile admin glitches: toolbar overflow and brand label collision. */
 .table-toolbar input { min-width:0; }
 @media (max-width: 600px) { .admin-brand small { display:none; } }
+
+/* Open Play: host / participant toggle */
+.role-toggle { display:inline-flex; padding:4px; gap:4px; background:var(--surface); border:1px solid var(--border); border-radius:999px; }
+.role-toggle button { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:999px; background:transparent; color:var(--muted); font-size:12px; font-weight:700; transition:background .18s var(--ease-out), color .18s; }
+.role-toggle button:hover { color:var(--ink); }
+.role-toggle button.active { background:var(--green); color:var(--chalk); }
+.capacity-readonly { color:var(--green-ink); font-size:11px; font-weight:700; letter-spacing:0; }
+.rotation-row.is-you { background:color-mix(in srgb, var(--lime) 16%, var(--surface)); box-shadow:inset 3px 0 0 var(--lime); }
+.rotation-row.is-you .player-avatar { background:var(--lime); color:var(--graphite); }
+.rotation-row.is-you .rotation-rank { color:var(--ink); padding-left:6px; }
+.participant-tools .participant-join { display:inline-flex; align-items:center; justify-content:center; gap:7px; width:100%; margin-top:34px; }
+.participant-tools .participant-join:disabled { opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
+@media (max-width: 600px) { .role-toggle { order:2; width:100%; } .openplay-top .outline-button { order:3; } .role-toggle button { flex:1; justify-content:center; padding:8px 10px; } }
