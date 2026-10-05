@@ -187,7 +187,7 @@ function HomeView({ goBook, go }: { goBook: () => void; go: (target: SiteTarget)
 }
 
 function PublicFooter({ go }: { go: (target: SiteTarget) => void }) {
-  return <footer className="public-footer"><div className="wordmark"><Mark dark /><span>baseline</span></div><span>Indoor pickleball, Cebu City</span><a href={`mailto:${contact.email}`}>{contact.email}</a><a href={contact.mapsUrl} target="_blank" rel="noopener noreferrer">Directions<span className="sr-only"> (opens Google Maps in a new tab)</span></a><button className="footer-link" onClick={() => go({ area: "public", view: "news" })}>News</button><span>© {new Date().getFullYear()} Baseline Pickle Club</span></footer>;
+  return <footer className="public-footer"><div className="wordmark"><Mark dark /><span>baseline</span></div><span>Indoor pickleball, Cebu City</span><a href={`mailto:${contact.email}`}>{contact.email}</a><a href={contact.mapsUrl} target="_blank" rel="noopener noreferrer">Directions<span className="sr-only"> (opens Google Maps in a new tab)</span></a><button className="footer-link" onClick={() => go({ area: "public", view: "news" })}>News</button><span>© {new Date().getFullYear()} Baseline Pickle Club</span><span className="footer-credit">Developed by WaddleLabs</span></footer>;
 }
 
 function BookingFlow({ onBack, maxPlayers = 4 }: { onBack: () => void; maxPlayers?: number }) {
