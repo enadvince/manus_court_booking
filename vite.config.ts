@@ -203,7 +203,43 @@ function vitePluginStorageProxy(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), vitePluginStorageProxy()];
+// Injects the Umami analytics tag only when its endpoint is configured, so builds
+// without it don't ship a script pointing at "%VITE_ANALYTICS_ENDPOINT%/umami".
+function vitePluginAnalytics(): Plugin {
+  let env: Record<string, string> = {};
+  return {
+    name: "analytics",
+    configResolved(config) {
+      env = config.env;
+    },
+    transformIndexHtml() {
+      const endpoint = env.VITE_ANALYTICS_ENDPOINT;
+      const websiteId = env.VITE_ANALYTICS_WEBSITE_ID;
+      if (!endpoint || !websiteId) return [];
+      return [
+        {
+          tag: "script",
+          attrs: { defer: true, src: `${endpoint}/umami`, "data-website-id": websiteId },
+          injectTo: "body",
+        },
+      ];
+    },
+  };
+}
+
+// The Manus plugins only work inside the Manus editor; on Vercel they add an
+// inlined ~360 kB runtime (with its own copy of React), a debug log collector,
+// and data-loc attributes on every element.
+const isVercel = !!process.env.VERCEL;
+
+const plugins = [
+  react(),
+  tailwindcss(),
+  vitePluginAnalytics(),
+  ...(isVercel
+    ? []
+    : [jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), vitePluginStorageProxy()]),
+];
 
 export default defineConfig({
   plugins,
