@@ -658,6 +658,7 @@ p.post-dates { display:flex; flex-wrap:wrap; gap:4px 14px; color:var(--muted); f
 /* Footer links */
 .public-footer a, .footer-link { padding:0; background:none; color:inherit; font-size:inherit; text-decoration:underline; text-decoration-color:transparent; text-underline-offset:3px; transition:color .15s, text-decoration-color .15s; }
 .public-footer a:hover, .footer-link:hover { color:var(--ink); text-decoration-color:currentColor; }
+.footer-credit { opacity:.6; letter-spacing:.02em; }
 
 /* Code snippets with copy buttons */
 .embed-card { display:grid; gap:14px; margin-top:18px; padding:24px; background:var(--bg-ffffff); border:1px solid var(--ln-e4ece6); }
