@@ -55,6 +55,14 @@ const pages: SearchItem[] = [
     target: { area: "public", view: "news" },
   },
   {
+    id: "page-signin",
+    title: "Sign in",
+    group: "Pages",
+    description: "Sign in to your member account or create one.",
+    keywords: "login log in register sign up create account join member",
+    target: { area: "public", view: "signin" },
+  },
+  {
     id: "page-faq",
     title: "Frequently asked questions",
     group: "Pages",

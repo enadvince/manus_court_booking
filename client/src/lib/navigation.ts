@@ -1,4 +1,10 @@
-export type PublicView = "home" | "book" | "account" | "openplay" | "news";
+export type PublicView =
+  | "home"
+  | "book"
+  | "account"
+  | "openplay"
+  | "news"
+  | "signin";
 export type AdminView =
   | "dashboard"
   | "schedule"
@@ -12,6 +18,7 @@ export const publicViews: readonly PublicView[] = [
   "account",
   "openplay",
   "news",
+  "signin",
 ];
 export const adminViews: readonly AdminView[] = [
   "dashboard",

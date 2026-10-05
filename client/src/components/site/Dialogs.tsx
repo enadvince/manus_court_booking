@@ -1,9 +1,7 @@
-import { useId, useState, type FormEvent, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Eye, EyeOff, X } from "lucide-react";
-import { toast } from "sonner";
-import { isValidEmail } from "@/lib/newsletter";
+import { Eye, EyeOff } from "lucide-react";
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -50,25 +48,30 @@ export function ConfirmDialog({
 
 export function PasswordInput({
   id,
+  name = "password",
   autoComplete = "current-password",
   invalid = false,
   describedBy,
+  onValueChange,
 }: {
   id: string;
+  name?: string;
   autoComplete?: string;
   invalid?: boolean;
   describedBy?: string;
+  onValueChange?: (value: string) => void;
 }) {
   const [visible, setVisible] = useState(false);
   return (
     <span className="password-field">
       <input
         id={id}
-        name="password"
+        name={name}
         type={visible ? "text" : "password"}
         autoComplete={autoComplete}
         aria-invalid={invalid || undefined}
         aria-describedby={describedBy}
+        onChange={event => onValueChange?.(event.target.value)}
         required
       />
       <button
@@ -82,91 +85,5 @@ export function PasswordInput({
         {visible ? <EyeOff size={17} /> : <Eye size={17} />}
       </button>
     </span>
-  );
-}
-
-export function SignInDialog({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const id = useId();
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const email = String(data.get("email") ?? "");
-    const password = String(data.get("password") ?? "");
-    if (!isValidEmail(email)) return setError("Enter a valid email address.");
-    if (!password) return setError("Enter your password.");
-    setError("");
-    setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 600));
-    setLoading(false);
-    onOpenChange(false);
-    toast("Member login is ready for your auth provider.");
-  };
-
-  return (
-    <Dialog.Root
-      open={open}
-      onOpenChange={value => {
-        if (!value) setError("");
-        onOpenChange(value);
-      }}
-    >
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content className="dialog-panel signin-panel">
-          <Dialog.Close className="dialog-close icon-button" aria-label="Close">
-            <X size={18} />
-          </Dialog.Close>
-          <span className="eyebrow">MEMBER AREA</span>
-          <Dialog.Title>Welcome back.</Dialog.Title>
-          <Dialog.Description className="dialog-description">
-            Sign in to see your bookings and join open play.
-          </Dialog.Description>
-          <form className="signin-form" onSubmit={submit} noValidate>
-            <label htmlFor={`${id}-email`}>Email address</label>
-            <input
-              id={`${id}-email`}
-              name="email"
-              type="email"
-              autoComplete="email"
-              placeholder="alex@example.com"
-              aria-invalid={error.startsWith("Enter a valid") || undefined}
-              aria-describedby={error ? `${id}-error` : undefined}
-              required
-            />
-            <label htmlFor={`${id}-password`}>Password</label>
-            <PasswordInput
-              id={`${id}-password`}
-              invalid={error === "Enter your password."}
-              describedBy={error ? `${id}-error` : undefined}
-            />
-            <p id={`${id}-error`} className="form-error" role="alert">
-              {error}
-            </p>
-            <button
-              className="dark-button wide"
-              type="submit"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <span className="spinner" aria-hidden="true" /> Signing in…
-                </>
-              ) : (
-                "Sign in"
-              )}
-            </button>
-          </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
   );
 }

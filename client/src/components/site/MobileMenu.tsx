@@ -4,10 +4,12 @@ import {
   ArrowRight,
   LayoutDashboard,
   LogIn,
+  LogOut,
   Menu,
   Search,
   X,
 } from "lucide-react";
+import type { Member } from "@/lib/auth";
 import type { PublicView } from "@/lib/navigation";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -23,13 +25,15 @@ export function MobileMenu({
   view,
   onNavigate,
   onAdmin,
-  onSignIn,
+  member,
+  onSignOut,
   onSearch,
 }: {
   view: PublicView;
   onNavigate: (view: PublicView) => void;
   onAdmin: () => void;
-  onSignIn: () => void;
+  member: Member | null;
+  onSignOut: () => void;
   onSearch: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -71,9 +75,18 @@ export function MobileMenu({
             <button className="outline-button" onClick={run(onSearch)}>
               <Search size={16} /> Search the site
             </button>
-            <button className="outline-button" onClick={run(onSignIn)}>
-              <LogIn size={16} /> Sign in
-            </button>
+            {member ? (
+              <button className="outline-button" onClick={run(onSignOut)}>
+                <LogOut size={16} /> Sign out
+              </button>
+            ) : (
+              <button
+                className="outline-button"
+                onClick={run(() => onNavigate("signin"))}
+              >
+                <LogIn size={16} /> Sign in or register
+              </button>
+            )}
             <button className="outline-button" onClick={run(onAdmin)}>
               <LayoutDashboard size={16} /> Club ops
             </button>
