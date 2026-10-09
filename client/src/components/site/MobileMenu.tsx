@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
   ArrowRight,
@@ -37,6 +37,13 @@ export function MobileMenu({
   onSearch: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  // Browser back/forward changes the page, so the menu shouldn't stay open.
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("popstate", close);
+    return () => window.removeEventListener("popstate", close);
+  }, [open]);
   // Close first so focus returns to the trigger before the next action runs.
   const run = (action: () => void) => () => {
     setOpen(false);

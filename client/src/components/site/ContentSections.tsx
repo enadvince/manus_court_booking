@@ -8,7 +8,13 @@ import {
 } from "lucide-react";
 import { formatDay } from "@/lib/dates";
 import { isValidEmail, subscribeToNewsletter } from "@/lib/newsletter";
-import { faqs, posts, type Post } from "@/lib/siteContent";
+import {
+  FAQ_UPDATED,
+  faqs,
+  policies,
+  posts,
+  type Post,
+} from "@/lib/siteContent";
 import { ConfirmDialog } from "./Dialogs";
 
 export function FaqSection() {
@@ -29,6 +35,12 @@ export function FaqSection() {
         <p>
           Everything players ask before their first game. Still stuck? Tap
           Contact any time.
+        </p>
+        <p className="post-dates">
+          <span className="post-updated">
+            Last updated{" "}
+            <time dateTime={FAQ_UPDATED}>{formatDay(FAQ_UPDATED)}</time>
+          </span>
         </p>
       </div>
       <div className="faq-list">
@@ -220,6 +232,48 @@ export function NewsView({ onBack }: { onBack: () => void }) {
             <h2 id={`${post.id}-title`}>{post.title}</h2>
             <PostDates post={post} />
             {post.body.map(paragraph => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function PoliciesView({ onBack }: { onBack: () => void }) {
+  return (
+    <div className="news-page">
+      <button className="back-link" onClick={onBack}>
+        <ChevronLeft size={16} /> Back to club
+      </button>
+      <header className="news-header">
+        <div className="eyebrow">BOOKING POLICIES</div>
+        <h1>
+          The fine print,
+          <br />
+          <em>kept short.</em>
+        </h1>
+      </header>
+      <div className="news-list">
+        {policies.map(policy => (
+          <article
+            key={policy.id}
+            id={policy.id}
+            tabIndex={-1}
+            className="news-post"
+            aria-labelledby={`${policy.id}-title`}
+          >
+            <h2 id={`${policy.id}-title`}>{policy.title}</h2>
+            <p className="post-dates">
+              <span className="post-updated">
+                Last updated{" "}
+                <time dateTime={policy.updated}>
+                  {formatDay(policy.updated)}
+                </time>
+              </span>
+            </p>
+            {policy.body.map(paragraph => (
               <p key={paragraph}>{paragraph}</p>
             ))}
           </article>

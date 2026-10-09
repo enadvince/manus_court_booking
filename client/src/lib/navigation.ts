@@ -4,7 +4,8 @@ export type PublicView =
   | "account"
   | "openplay"
   | "news"
-  | "signin";
+  | "signin"
+  | "policies";
 export type AdminView =
   | "dashboard"
   | "schedule"
@@ -19,6 +20,7 @@ export const publicViews: readonly PublicView[] = [
   "openplay",
   "news",
   "signin",
+  "policies",
 ];
 export const adminViews: readonly AdminView[] = [
   "dashboard",

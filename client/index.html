@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+      content="width=device-width, initial-scale=1.0" />
     <title>Baseline Pickle Club — Book your court</title>
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -13,7 +13,18 @@
     <meta name="description" content="Book tournament-ready indoor pickleball courts at Baseline Pickle Club." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Fonts load without blocking first paint; system fonts show until they arrive (display=swap). -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" /></noscript>
+    <script>
+      // The landing hero is a CSS background, found late by the browser; start it early on the home page only.
+      if (location.pathname === "/" && !/[?&]view=(?!home)/.test(location.search)) {
+        var hero = document.createElement("link");
+        hero.rel = "preload"; hero.as = "image"; hero.href = "/images/hero.webp"; hero.fetchPriority = "high";
+        document.head.appendChild(hero);
+      }
+    </script>
     <script>
       // Apply the saved (or system) theme before first paint. Mirrors ThemeContext.
       (function () {

@@ -6,6 +6,7 @@ import {
   Mail,
   MapPin,
   MessageCircle,
+  MessagesSquare,
   Phone,
   X,
 } from "lucide-react";
@@ -116,6 +117,17 @@ export function FloatingContact() {
         >
           <span className="eyebrow">TALK TO THE CLUB</span>
           <h2>We usually reply within the hour.</h2>
+          <a
+            href={contact.messengerUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <MessagesSquare size={16} />
+            <span>
+              <strong>Message us on Messenger</strong>
+              <small>Fastest replies (opens Messenger)</small>
+            </span>
+          </a>
           <a href={`mailto:${contact.email}`}>
             <Mail size={16} />
             <span>
@@ -138,7 +150,7 @@ export function FloatingContact() {
             </span>
           </a>
           <p className="contact-hours">
-            <Clock3 size={14} /> Open daily 06:00–22:00
+            <Clock3 size={14} /> Open daily 6:00 AM to 10:00 PM
           </p>
         </Popover.Content>
       </Popover.Portal>

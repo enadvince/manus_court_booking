@@ -4,6 +4,8 @@
 export const contact = {
   email: "hello@baseline.ph",
   phone: "+63 917 000 0000",
+  // Placeholder until the club's Messenger page is set up.
+  messengerUrl: "https://m.me/baselinepickleclub",
   address: "Baseline Pickle Club, Cebu City",
   mapsUrl:
     "https://www.google.com/maps/search/?api=1&query=Baseline+Pickle+Club+Cebu+City",
@@ -26,18 +28,39 @@ export const faqs: Faq[] = [
       "You can cancel or reschedule for free up to 12 hours before your session starts. Inside 12 hours the court fee is non-refundable, but you can still hand the booking to a friend.",
   },
   {
+    id: "faq-booking",
+    keywords: "how to book reserve online slot time court assign",
+    question: "How do I book a court?",
+    answer:
+      "Pick a day, how long you want to play, and a start time. We assign the best free court automatically, or you can choose a specific one. Sessions start on the hour from 6:00 AM, and the last one ends at 10:00 PM.",
+  },
+  {
     id: "faq-pricing",
-    keywords: "price cost fee rate peso",
+    keywords: "price cost fee rate peso peak off-peak weekend",
     question: "How much does a court cost?",
     answer:
-      "Every court is ₱450 per hour, whether you play at 6 AM or in the evening peak. The price covers the whole court, not each player.",
+      "Off-peak is ₱450 per hour. Peak is ₱600 per hour: weekdays from 6:00 PM to 9:00 PM, and all day on Saturdays and Sundays. A booking that crosses into peak is charged per half hour, and the price always covers the whole court.",
+  },
+  {
+    id: "faq-payment",
+    keywords: "pay payment cash gcash maya qr screenshot verify",
+    question: "How do I pay?",
+    answer:
+      "Pay cash at the front desk when you arrive, or pay by QR (GCash or Maya) and upload a screenshot when you book. The host checks QR payments and marks them verified.",
   },
   {
     id: "faq-players",
-    keywords: "capacity cap friends group",
-    question: "How many players can join a booking?",
+    keywords: "capacity cap friends group how many players",
+    question: "How many players can I bring?",
     answer:
-      "When you book, you set a player cap of 2, 4, 6 or 8. Friends can join until the session is full, and the booking board shows the joined and maximum count.",
+      "Court bookings have no player cap: the court is yours for the session. Open Play is different. The host sets a player limit based on how long the session runs.",
+  },
+  {
+    id: "faq-changeover",
+    keywords: "buffer changeover late start early finish",
+    question: "Is there a gap between sessions?",
+    answer:
+      "Sessions run on the hour. Expect a 5 minute changeover buffer at the start while the previous group clears the court.",
   },
   {
     id: "faq-open-play",
@@ -54,11 +77,58 @@ export const faqs: Faq[] = [
       "No. Paddles and balls are available at the front desk, so you can walk in empty-handed and still play.",
   },
   {
+    id: "faq-parking",
+    keywords: "parking car park motorcycle bike drive",
+    question: "Is there parking?",
+    answer:
+      "Yes. Free parking for cars and motorcycles is right outside the club, with bike racks by the entrance. On busy weekend evenings, arrive 10 minutes early to find a spot.",
+  },
+  {
     id: "faq-hours",
     keywords: "hours opening times schedule open close",
     question: "When is the club open?",
     answer:
-      "We are open every day from 06:00 to 22:00. The busiest stretch is 6–9 PM on weekdays, so book early for evening games.",
+      "We are open every day from 6:00 AM to 10:00 PM. The busiest stretch is 6:00 to 9:00 PM on weekdays, so book early for evening games.",
+  },
+];
+
+/** Bump whenever an FAQ answer changes. */
+export const FAQ_UPDATED = "2026-10-09";
+
+export type Policy = {
+  id: string;
+  title: string;
+  updated: string;
+  body: string[];
+};
+
+export const policies: Policy[] = [
+  {
+    id: "policy-cancellation",
+    title: "Cancellation and rescheduling",
+    updated: "2026-10-09",
+    body: [
+      "Cancel or reschedule for free up to 12 hours before your session starts. You can do both from your booking confirmation or from My bookings.",
+      "Inside 12 hours the court fee is non-refundable, but you can still hand the booking to a friend. Moving a booking keeps your payment; any price difference is settled at the front desk.",
+    ],
+  },
+  {
+    id: "policy-payment",
+    title: "Payments",
+    updated: "2026-10-09",
+    body: [
+      "Pay cash at the front desk when you arrive, or pay by QR (GCash or Maya) and upload your screenshot when you book. The host checks every QR payment and marks it verified.",
+      "If a screenshot can't be verified, we will ask you to pay at the desk before play.",
+    ],
+  },
+  {
+    id: "policy-house-rules",
+    title: "House rules",
+    updated: "2026-10-09",
+    body: [
+      "Sessions start on the hour. Expect a 5 minute changeover buffer at the start while the previous group clears the court, and please clear the court on time at the end of yours.",
+      "Non-marking indoor shoes only. Paddles and balls can be borrowed from the front desk.",
+    ],
   },
 ];
 
