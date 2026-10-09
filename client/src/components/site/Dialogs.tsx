@@ -10,6 +10,8 @@ type ConfirmDialogProps = {
   description: ReactNode;
   confirmLabel: string;
   cancelLabel?: string;
+  /** "neutral" for confirmations that don't destroy anything. */
+  tone?: "danger" | "neutral";
   onConfirm: () => void;
 };
 
@@ -21,6 +23,7 @@ export function ConfirmDialog({
   description,
   confirmLabel,
   cancelLabel = "Keep it",
+  tone = "danger",
   onConfirm,
 }: ConfirmDialogProps) {
   return (
@@ -36,7 +39,10 @@ export function ConfirmDialog({
             <AlertDialog.Cancel className="outline-button">
               {cancelLabel}
             </AlertDialog.Cancel>
-            <AlertDialog.Action className="danger-button" onClick={onConfirm}>
+            <AlertDialog.Action
+              className={tone === "danger" ? "danger-button" : "dark-button"}
+              onClick={onConfirm}
+            >
               {confirmLabel}
             </AlertDialog.Action>
           </div>

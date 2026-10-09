@@ -1,7 +1,7 @@
 export const DEFAULT_UTM = {
-  utm_source: "baseline-pickle-club",
+  utm_source: "baselinepickleclub",
   utm_medium: "referral",
-  utm_campaign: "website",
+  utm_campaign: "site",
 } as const;
 
 /**

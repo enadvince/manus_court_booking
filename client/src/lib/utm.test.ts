@@ -9,9 +9,9 @@ describe("addUtmParams", () => {
       addUtmParams("https://maps.google.com/search?q=club#top", origin)
     );
     expect(result.searchParams.get("q")).toBe("club");
-    expect(result.searchParams.get("utm_source")).toBe("baseline-pickle-club");
+    expect(result.searchParams.get("utm_source")).toBe("baselinepickleclub");
     expect(result.searchParams.get("utm_medium")).toBe("referral");
-    expect(result.searchParams.get("utm_campaign")).toBe("website");
+    expect(result.searchParams.get("utm_campaign")).toBe("site");
     expect(result.hash).toBe("#top");
   });
 

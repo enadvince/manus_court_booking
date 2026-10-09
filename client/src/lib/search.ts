@@ -1,10 +1,10 @@
 import type { SiteTarget } from "./navigation";
-import { faqs, posts } from "./siteContent";
+import { faqs, policies, posts } from "./siteContent";
 
 export type SearchItem = {
   id: string;
   title: string;
-  group: "Pages" | "Courts" | "FAQ" | "News" | "Club ops";
+  group: "Pages" | "Courts" | "FAQ" | "Policies" | "News" | "Club ops";
   description: string;
   /** Curated synonyms; weighted above the description. */
   keywords?: string;
@@ -63,6 +63,14 @@ const pages: SearchItem[] = [
     target: { area: "public", view: "signin" },
   },
   {
+    id: "page-policies",
+    title: "Booking policies",
+    group: "Pages",
+    description: "Cancellation, payments and house rules.",
+    keywords: "policy terms rules cancellation refund payment",
+    target: { area: "public", view: "policies" },
+  },
+  {
     id: "page-faq",
     title: "Frequently asked questions",
     group: "Pages",
@@ -84,7 +92,7 @@ const courtItems: SearchItem[] = ["01", "02", "03", "04"].map(number => ({
   id: `court-${number}`,
   title: `Court ${number}`,
   group: "Courts",
-  description: "Indoor · Tournament surface · ₱450 / hour",
+  description: "Indoor · Tournament surface · ₱450 to ₱600 / hour",
   keywords: "court lane indoor price",
   target: { area: "public", view: "book" },
 }));
@@ -119,6 +127,18 @@ export function buildSearchIndex(): SearchItem[] {
       description: faq.answer,
       keywords: faq.keywords,
       target: { area: "public", view: "home", anchor: faq.id } as SiteTarget,
+    })),
+    ...policies.map(policy => ({
+      id: policy.id,
+      title: policy.title,
+      group: "Policies" as const,
+      description: policy.body[0],
+      body: policy.body.join(" "),
+      target: {
+        area: "public",
+        view: "policies",
+        anchor: policy.id,
+      } as SiteTarget,
     })),
     ...posts.map(post => ({
       id: post.id,
